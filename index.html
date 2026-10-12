@@ -402,7 +402,8 @@
 </script>
 <!-- ===== fin lives-sesion v5.2 ===== -->
 <script>if (window.self !== window.top) document.documentElement.classList.add('embebido');</script>
-<style>html.embebido .header{display:none!important} html.embebido body{padding-top:0!important;margin-top:0!important}</style>
+<style>html.embebido .header{display:none!important} html.embebido body{padding-top:0!important;margin-top:0!important}.lsTope500{font-size:12px;color:#5F726C;text-align:center;padding:8px 0}
+</style>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Potenciales de Planta · LIVES</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -1196,9 +1197,13 @@ function renderDatos(){
   let f=rows.filter(r=>!q||cols.some(c=>String(r[c[0]]==null?"":r[c[0]]).toUpperCase().includes(q)));
   f.sort((x,y)=>wk(y)-wk(x)||(x.g>y.g?1:-1)||(x.n>y.n?1:-1));
   DATOS_VISTA=f;
-  $("phDatos").innerHTML=fi(f.length)+" filas de "+(ST.modo==="sem"?"la semana "+(ST.sem[a]%100):"todo el rango")+(q?" que coinciden con el filtro":"")+(f.length>600?" · se muestran las primeras 600; el CSV trae todas":"")+" · "+(cos?"una fila = una persona en una operación, estilo y semana":"una fila = una persona en una semana (las semanas con --- no generan fila)");
+  /* Regla 500: sin filtros (semana elegida, sin grupo ni búsqueda) se dibujan solo las 500 filas más recientes;
+     con cualquier filtro, todas. El CSV siempre trae todas. */
+  const fDib=(!q&&!ST.grupo&&ST.modo==="sem"&&f.length>500)?f.slice(0,500):f;
+  $("phDatos").innerHTML=fi(f.length)+" filas de "+(ST.modo==="sem"?"la semana "+(ST.sem[a]%100):"todo el rango")+(q?" que coinciden con el filtro":"")+" · "+(cos?"una fila = una persona en una operación, estilo y semana":"una fila = una persona en una semana (las semanas con --- no generan fila)");
   $("tDatos").innerHTML=f.length?'<table><thead><tr>'+cols.map(c=>'<th'+(["p","t","s","y"].includes(c[0])?' class="n"':'')+'>'+c[1]+'</th>').join("")+'</tr></thead><tbody>'+
-    f.slice(0,600).map(r=>'<tr>'+cols.map(c=>{const v=r[c[0]];return '<td'+(["p","t","s","y"].includes(c[0])?' class="n"':'')+'>'+(c[0]==="p"?"<b>"+f1(v)+"</b>":c[0]==="t"?(v==null?"":v.toFixed(2)):esc(v))+'</td>';}).join("")+'</tr>').join("")+'</tbody></table>':'<div class="vacio">Ninguna fila coincide.</div>';
+    fDib.map(r=>'<tr>'+cols.map(c=>{const v=r[c[0]];return '<td'+(["p","t","s","y"].includes(c[0])?' class="n"':'')+'>'+(c[0]==="p"?"<b>"+f1(v)+"</b>":c[0]==="t"?(v==null?"":v.toFixed(2)):esc(v))+'</td>';}).join("")+'</tr>').join("")+'</tbody></table>'+
+    (fDib.length<f.length?'<div class="lsTope500">Se muestran los 500 registros más recientes de '+f.length.toLocaleString("es-PE")+'. Usa los filtros para ver los demás.</div>':''):'<div class="vacio">Ninguna fila coincide.</div>';
 }
 function exportarCSV(){
   const h=["AREA","AÑO","SEMANA","CODIGO","NOMBRE","CAT","LINEA_PROCESO","OCUPACION","COD_OPER","OPERACION","MAQ","DIFICULTAD","TSD","GRUPO_PEDIDO","ESTILO","TELA","POTENCIAL"];
