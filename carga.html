@@ -820,7 +820,7 @@ async function guardar(k){
       tot.nuevas+=j.nuevas;tot.actualizadas+=j.actualizadas;
     }
     $("f_"+k).style.display="none";$("o_"+k).style.display="block";
-    $("os_"+k).innerHTML=filas.length+" filas: <b>"+tot.nuevas+" nuevas</b> y <b>"+tot.actualizadas+" actualizadas</b>. El tablero las muestra al presionar Actualizar.";
+    $("os_"+k).innerHTML=filas.length+" filas: <b>"+tot.nuevas+" nuevas</b> y <b>"+tot.actualizadas+" actualizadas</b>. El tablero las muestra al actualizar la pantalla desde el portal.";
     $("oc_"+k).textContent="Código de la carga: "+lote+" · "+new Date().toLocaleString("es-PE");
     const e=$("e_"+k);e.className="est ok";e.textContent="Guardado";
   }catch(err){

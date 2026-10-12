@@ -699,7 +699,6 @@ details.help p{color:var(--stone);margin:8px 0 0;}
     <select id="selSem" title="Semana"></select>
     <select id="selGrupo" title="Línea / proceso"></select>
     <span class="spacer"></span>
-    <button class="btn" onclick="recargar()">↻ Actualizar</button>
     <button class="btn" onclick="window.print()">Imprimir</button>
   </div>
 
@@ -963,7 +962,7 @@ async function cargar(){
   }
   if(!crudo){
     if(habia){
-      SRC={tipo:"base",detalle:"No se pudo actualizar ("+err.message+"): se siguen mostrando los datos leídos a las "+SRC.hora+". Presiona Actualizar para volver a intentar.",hora:SRC.hora};
+      SRC={tipo:"base",detalle:"No se pudo actualizar ("+err.message+"): se siguen mostrando los datos leídos a las "+SRC.hora+". Para volver a intentar, actualiza la pantalla desde el portal.",hora:SRC.hora};
       render();return;
     }
     mensajeCarga('No hay conexión con la base de datos ('+esc(err.message)+'). <button class="btn" onclick="recargar()">Reintentar</button>');
@@ -973,7 +972,7 @@ async function cargar(){
   if(!rows.length){
     const ok=await puedeVer();
     mensajeCarga(ok===false?"Tu usuario no tiene permiso para ver los potenciales. Pide a Christian que te lo asigne en el portal."
-      :'Todavía no hay potenciales guardados. Se suben en la página de carga. <button class="btn" onclick="recargar()">Actualizar</button>');
+      :'Todavía no hay potenciales guardados. Se suben en la página de carga.');
     DATA=[];return;
   }
   DATA=rows;
