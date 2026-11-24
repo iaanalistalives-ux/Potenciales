@@ -919,7 +919,8 @@ async function guardar(k){
       tot.nuevas+=j.nuevas;tot.actualizadas+=j.actualizadas;
     }
     $("f_"+k).style.display="none";$("o_"+k).style.display="block";
-    $("os_"+k).innerHTML=filas.length+" filas: <b>"+tot.nuevas+" nuevas</b> y <b>"+tot.actualizadas+" actualizadas</b>. El tablero las muestra al actualizar la pantalla desde el portal.";
+    $("os_"+k).innerHTML=filas.length+" filas: <b>"+tot.nuevas+" nuevas</b> y <b>"+tot.actualizadas+" actualizadas</b>. "+(window.name==="potSubir"?"El tablero se actualiza al cerrar esta ventana.":"El tablero las muestra al actualizar la pantalla desde el portal.");
+    try{if(window.parent!==window)window.parent.postMessage({tipo:"pot-guardado"},location.origin);}catch(e){}
     $("oc_"+k).textContent="Código de la carga: "+lote+" · "+new Date().toLocaleString("es-PE");
     const e=$("e_"+k);e.className="est ok";e.textContent="Guardado";
   }catch(err){
@@ -938,6 +939,10 @@ async function revisarPermiso(){
       a.innerHTML="Tu usuario puede ver esta página pero <b>no tiene permiso para guardar potenciales</b>. Pide a Christian que te lo asigne en el portal.";}
   }catch(e){}
 }
+/* Abierta dentro del tablero (ventana "Subir archivos"): el tablero pregunta si quedó un archivo sin guardar. */
+window.POT_SIN_GUARDAR=function(){
+  return Object.keys(EST).some(k=>EST[k].enviando||($("f_"+k).style.display!=="none"&&EST[k].archivos.length>0));
+};
 armar();
 revisarPermiso();
 </script>

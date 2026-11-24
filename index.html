@@ -640,6 +640,16 @@ input.q{font-weight:400;color:#333;cursor:text;min-width:220px;}
 .btn{font-family:inherit;font-size:13px;font-weight:700;border-radius:8px;padding:8px 14px;cursor:pointer;border:1px solid var(--warm);background:#fff;color:var(--sage);}
 .btn:hover{border-color:var(--sage);}
 .spacer{margin-left:auto;}
+.btn[disabled]{opacity:.55;cursor:not-allowed;color:var(--stone);}
+.btn[disabled]:hover{border-color:var(--warm);}
+.subirModal{position:fixed;inset:0;z-index:9000;background:rgba(14,59,54,.55);display:flex;align-items:center;justify-content:center;padding:2vh 2vw;}
+.subirModal[hidden],.subirPreg[hidden]{display:none;}
+.subirCaja{background:var(--warm-light);border-radius:var(--r);width:min(900px,100%);height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+.subirTop{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;background:var(--card);border-bottom:1px solid var(--warm);}
+.subirPreg{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-right:auto;font-size:13px;font-weight:700;color:var(--taupe);}
+.subirCaja iframe{flex:1;width:100%;border:0;background:var(--warm-light);}
+@media(max-width:700px){.subirModal{padding:0;}.subirCaja{border-radius:0;width:100%;}}
+@media print{.subirModal{display:none!important;}}
 .verdict{display:flex;align-items:center;gap:16px;background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:16px 20px;margin-bottom:14px;border-left:6px solid var(--slate);border-top-left-radius:0;border-bottom-left-radius:0;}
 .verdict .dot{width:44px;height:44px;border-radius:50%;background:#EDF1F2;color:var(--slate);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex:none;}
 .verdict .t{font-size:19px;font-weight:700;color:var(--slate);line-height:1.2;}
@@ -799,7 +809,22 @@ details.help p{color:var(--stone);margin:8px 0 0;}
     <select id="selSem" title="Semana"></select>
     <select id="selGrupo" title="Línea / proceso"></select>
     <span class="spacer"></span>
+    <button class="btn" id="btnSubir" disabled title="Solo para quien sube archivos" onclick="abrirSubir()">Subir archivos</button>
     <button class="btn" onclick="window.print()">Imprimir</button>
+  </div>
+
+  <!-- Ventana "Subir archivos": abre la carga semanal (carga.html) dentro del tablero. -->
+  <div class="subirModal" id="subirModal" role="dialog" aria-modal="true" aria-label="Subir archivos" hidden>
+    <div class="subirCaja">
+      <div class="subirTop">
+        <span class="subirPreg" id="subirPreg" hidden>¿Salir sin guardar?
+          <button class="btn" type="button" onclick="cerrarSubir(true)">Sí, salir</button>
+          <button class="btn" type="button" onclick="$('subirPreg').hidden=true">Seguir aquí</button>
+        </span>
+        <button class="btn" type="button" id="subirCerrar" onclick="cerrarSubir()">✕ Cerrar</button>
+      </div>
+      <iframe id="subirMarco" name="potSubir" title="Subir archivos de potenciales"></iframe>
+    </div>
   </div>
 
   <div id="loading" class="loading">Cargando datos…</div>
@@ -1072,7 +1097,7 @@ async function cargar(){
   if(!rows.length){
     const ok=await puedeVer();
     mensajeCarga(ok===false?"Tu usuario no tiene permiso para ver los potenciales. Pide a Christian que te lo asigne en el portal."
-      :'Todavía no hay potenciales guardados. Se suben en la página de carga.');
+      :'Todavía no hay potenciales guardados. Se suben con el botón «Subir archivos».');
     DATA=[];return;
   }
   DATA=rows;
@@ -1510,7 +1535,50 @@ function plegarTablasEnCelular(){
   });
 }
 window.addEventListener("resize",()=>plegarTablasEnCelular());
+
+/* ============================== SUBIR ARCHIVOS ==============================
+   El botón pregunta a la base si la persona puede subir (potenciales_puede_subir; se enciende
+   y apaga por persona en el panel "Quién registra", opción "Potenciales · cargar").
+   Puede: activo. No puede o sin sesión: gris. La base igual rechaza guardados sin permiso. */
+let SUBIO=false;
+async function permisoSubir(){
+  let ok=false;
+  try{
+    if(window.LIVES_SESION&&LIVES_SESION.actual()){
+      const r=await fetch(CFG.SB+"/rest/v1/rpc/potenciales_puede_subir",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}",cache:"no-store"});
+      ok=r.ok&&(await r.json())===true;
+    }
+  }catch(e){}
+  const b=$("btnSubir");b.disabled=!ok;b.title=ok?"":"Solo para quien sube archivos";
+}
+function abrirSubir(){
+  if($("btnSubir").disabled)return;
+  let src="carga.html";
+  try{
+    const a=window.LIVES_SESION&&LIVES_SESION.actual();
+    const n=(a&&a.nombre)||new URLSearchParams(location.search).get("usuario")||"";
+    if(n)src+="?usuario="+encodeURIComponent(n);
+  }catch(e){}
+  SUBIO=false;$("subirPreg").hidden=true;
+  $("subirMarco").src=src;$("subirModal").hidden=false;
+  document.documentElement.style.overflow="hidden";
+}
+function cerrarSubir(forzar){
+  const f=$("subirMarco");
+  if(!forzar){
+    let pend=false;
+    try{pend=!!(f.contentWindow&&f.contentWindow.POT_SIN_GUARDAR&&f.contentWindow.POT_SIN_GUARDAR());}catch(e){}
+    if(pend){$("subirPreg").hidden=false;return;}
+  }
+  $("subirModal").hidden=true;$("subirPreg").hidden=true;f.src="about:blank";
+  document.documentElement.style.overflow="";
+  if(SUBIO){SUBIO=false;cargar();}
+}
+window.addEventListener("message",e=>{if(e.origin===location.origin&&e.data&&e.data.tipo==="pot-guardado")SUBIO=true;});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("subirModal").hidden)cerrarSubir();});
+
 cargar();
+permisoSubir();
 </script>
 
 <!-- ===== lives-sin-barra v1 · 2026-10-05 · sin barra de título (el portal pone el encabezado).
